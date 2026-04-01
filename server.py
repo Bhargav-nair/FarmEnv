@@ -101,3 +101,16 @@ async def get_tasks():
 @app.get("/health")
 async def health():
     return {"status": "ok", "environment": "FarmEnv"}
+
+@app.get("/")
+async def root():
+    return {
+        "message": "FarmEnv API is running",
+        "endpoints": {
+            "health": "/health",
+            "reset": "/reset",
+            "step": "/step",
+            "state": "/state",
+            "tasks": "/tasks"
+        }
+    }
