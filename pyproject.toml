@@ -11,8 +11,9 @@ dependencies = [
     "pydantic",
     "numpy",
     "httpx",
-    "python-dotenv"
+    "python-dotenv",
+    "openenv-core>=0.2.0"
 ]
 
-[tool.setuptools]
-packages = ["."]
+[project.scripts]
+server = "server:app"
