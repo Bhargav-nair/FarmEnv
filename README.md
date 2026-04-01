@@ -1,3 +1,13 @@
+---
+title: FarmEnv
+emoji: 🌾
+colorFrom: green
+colorTo: blue
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # FarmEnv - AI Farm Resource Allocation Environment
 
 🚀 Built for OpenEnv Hackathon — Focused on real-world AI decision systems under uncertainty
