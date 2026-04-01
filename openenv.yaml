@@ -1,0 +1,33 @@
+name: farm-env
+version: "1.0.0"
+description: "An advanced farm resource allocation environment where an AI agent optimizes profit under weather uncertainty, crop stress events, and dynamic market conditions."
+
+tags:
+  - agriculture
+  - resource-allocation
+  - uncertainty
+  - economics
+  - multi-step
+  - real-world
+  - decision-making
+  
+tasks:
+  - id: task1
+    name: "Single Crop Water Management"
+    difficulty: easy
+    max_steps: 3
+  - id: task2
+    name: "Multi-Crop Triage Under Scarcity"
+    difficulty: medium
+    max_steps: 5
+  - id: task3
+    name: "Week-Long Yield Optimization"
+    difficulty: hard
+    max_steps: 7
+observation_space: "FarmObservation - day (int), weather (enum), crops (list of CropState with water/nutrient/health/growth), resources (dict)"
+action_space: "FarmAction - crop_index (int), water_units (float), fertilizer_kg (float), labor_hours (float)"
+reward_range: [-1.0, 2.0]
+interfaces:
+  - reset
+  - step
+  - state
