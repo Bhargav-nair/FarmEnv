@@ -1,0 +1,18 @@
+[project]
+name = "farmenv"
+version = "1.0.0"
+description = "AI farm resource allocation environment under uncertainty"
+readme = "README.md"
+requires-python = ">=3.10"
+
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "pydantic",
+    "numpy",
+    "httpx",
+    "python-dotenv"
+]
+
+[tool.setuptools]
+packages = ["."]
