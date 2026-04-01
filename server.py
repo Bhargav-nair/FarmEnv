@@ -114,3 +114,7 @@ async def root():
             "tasks": "/tasks"
         }
     }
+
+@app.get("/reset")
+def reset_get():
+    return {"message": "Use POST /reset"}
