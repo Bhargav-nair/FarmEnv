@@ -7,121 +7,148 @@ from pydantic import BaseModel
 from env import FarmAction, FarmEnv, FarmObservation, FarmReward
 from tasks import TASK_SCENARIOS
 
+# -------------------- App Setup --------------------
+
 app = FastAPI(
-	title="FarmEnv",
-	version="1.0.0",
-	description="An advanced farm resource allocation environment where an AI agent optimizes profit under weather uncertainty, crop stress events, and dynamic market conditions.",
+    title="FarmEnv",
+    version="1.0.0",
+    description="An advanced farm resource allocation environment API",
 )
 
+# Enable CORS
 app.add_middleware(
-	CORSMiddleware,
-	allow_origins=["*"],
-	allow_credentials=True,
-	allow_methods=["*"],
-	allow_headers=["*"],
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
+# Global environment instance
 env = FarmEnv()
 
 
+# -------------------- Models --------------------
+
 class ResetRequest(BaseModel):
-	task: Optional[str] = None
+    task: Optional[str] = None
 
 
 class StepResponse(BaseModel):
-	observation: FarmObservation
-	reward: FarmReward
-	done: bool
-	info: dict
+    observation: FarmObservation
+    reward: FarmReward
+    done: bool
+    info: dict
 
+
+# -------------------- Startup --------------------
 
 @app.on_event("startup")
 async def startup():
-	env.reset()
+    env.reset()
 
+
+# -------------------- Routes --------------------
 
 @app.post("/reset", response_model=FarmObservation)
-async def reset(request: ResetRequest = ResetRequest()):
-	global env
-	scenario = None
-	if request.task:
-		if request.task not in TASK_SCENARIOS:
-			raise HTTPException(
-				status_code=400,
-				detail=f"Unknown task: {request.task}. Available: {list(TASK_SCENARIOS.keys())}",
-			)
-		scenario = TASK_SCENARIOS[request.task]
-	env = FarmEnv(scenario=scenario)
-	return env.reset()
+async def reset(request: ResetRequest):
+    global env
+
+    scenario = None
+
+    if request.task:
+        if request.task not in TASK_SCENARIOS:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unknown task: {request.task}. Available: {list(TASK_SCENARIOS.keys())}",
+            )
+        scenario = TASK_SCENARIOS[request.task]
+
+    env = FarmEnv(scenario=scenario)
+    return env.reset()
 
 
 @app.post("/step", response_model=StepResponse)
 async def step(action: FarmAction):
-	try:
-		obs, reward, done, info = env.step(action)
-		return StepResponse(observation=obs, reward=reward, done=done, info=info)
-	except RuntimeError as e:
-		raise HTTPException(status_code=400, detail=str(e))
+    try:
+        obs, reward, done, info = env.step(action)
+        return StepResponse(
+            observation=obs,
+            reward=reward,
+            done=done,
+            info=info,
+        )
+    except RuntimeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @app.get("/state", response_model=FarmObservation)
 async def get_state():
-	try:
-		return env.state()
-	except RuntimeError as e:
-		raise HTTPException(status_code=400, detail=str(e))
+    try:
+        return env.state()
+    except RuntimeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @app.get("/tasks")
 async def get_tasks():
-	return [
-		{
-			"id": "task1",
-			"name": "Single Crop Water Management",
-			"difficulty": "easy",
-			"max_steps": 3,
-			"description": "Manage water levels for a single wheat crop over 3 days. Keep water_level between 0.4-0.7.",
-		},
-		{
-			"id": "task2",
-			"name": "Multi-Crop Triage Under Scarcity",
-			"difficulty": "medium",
-			"max_steps": 5,
-			"description": "Save a stressed corn crop under resource scarcity, weather uncertainty, and stress events while maintaining other crops.",
-		},
-		{
-			"id": "task3",
-			"name": "Week-Long Yield Optimization",
-			"difficulty": "hard",
-			"max_steps": 7,
-			"description": "Maximize total profit across crops under weather uncertainty, stress events, and dynamic market conditions.",
-		},
-	]
+    return [
+        {
+            "id": "task1",
+            "name": "Single Crop Water Management",
+            "difficulty": "easy",
+            "max_steps": 3,
+            "description": "Manage water levels for a single wheat crop over 3 days. Keep water_level between 0.4-0.7.",
+        },
+        {
+            "id": "task2",
+            "name": "Multi-Crop Triage Under Scarcity",
+            "difficulty": "medium",
+            "max_steps": 5,
+            "description": "Save a stressed corn crop under resource scarcity, weather uncertainty, and stress events while maintaining other crops.",
+        },
+        {
+            "id": "task3",
+            "name": "Week-Long Yield Optimization",
+            "difficulty": "hard",
+            "max_steps": 7,
+            "description": "Maximize total profit across crops under weather uncertainty, stress events, and dynamic market conditions.",
+        },
+    ]
 
 
 @app.get("/health")
 async def health():
-	return {"status": "ok", "environment": "FarmEnv"}
+    return {
+        "status": "ok",
+        "environment": "FarmEnv",
+    }
 
 
 @app.get("/")
 async def root():
-	return {
-		"message": "FarmEnv API is running",
-		"endpoints": {
-			"health": "/health",
-			"reset": "/reset",
-			"step": "/step",
-			"state": "/state",
-			"tasks": "/tasks",
-		},
-	}
+    return {
+        "message": "FarmEnv API is running",
+        "endpoints": {
+            "health": "/health",
+            "reset": "/reset",
+            "step": "/step",
+            "state": "/state",
+            "tasks": "/tasks",
+        },
+    }
 
 
 @app.get("/reset")
-def reset_get():
-	return {"message": "Use POST /reset"}
+async def reset_get():
+    return {"message": "Use POST /reset instead"}
 
 
-def main() -> FastAPI:
-	return app
+# -------------------- Entry Point (IMPORTANT) --------------------
+
+def main():
+    """
+    Entry point required by deployment platforms.
+    DO NOT run uvicorn here.
+    """
+    return app
