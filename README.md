@@ -328,7 +328,7 @@ pip install -r requirements.txt
 ### Running the Server
 
 ```bash
-uvicorn server:app --host 0.0.0.0 --port 7860
+uvicorn server.app:app --host 0.0.0.0 --port 7860
 ```
 
 The server starts with an auto-reset, so `/state` works immediately.
@@ -429,7 +429,8 @@ Average Score: 0.XXXX
 farm-env/
 ├── env.py           # Core environment: Pydantic models, crop physics, FarmEnv class
 ├── tasks.py         # Task definitions, scenarios, and grading functions
-├── server.py        # FastAPI server with REST endpoints
+├── server/
+│   └── app.py       # FastAPI server with REST endpoints
 ├── inference.py     # Baseline LLM agent
 ├── openenv.yaml     # OpenEnv specification
 ├── Dockerfile       # Container configuration for HF Spaces
