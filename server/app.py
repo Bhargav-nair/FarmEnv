@@ -1,6 +1,3 @@
-import uvicorn
-
-
 from typing import Optional
 
 from fastapi import FastAPI, HTTPException
@@ -10,12 +7,15 @@ from pydantic import BaseModel
 from env import FarmAction, FarmEnv, FarmObservation, FarmReward
 from tasks import TASK_SCENARIOS
 
+# -------------------- App Setup --------------------
+
 app = FastAPI(
     title="FarmEnv",
     version="1.0.0",
-    description="An advanced farm resource allocation environment where an AI agent optimizes profit under weather uncertainty, crop stress events, and dynamic market conditions.",
+    description="An advanced farm resource allocation environment API",
 )
 
+# Enable CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -24,8 +24,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Global environment instance
 env = FarmEnv()
 
+
+# -------------------- Models --------------------
 
 class ResetRequest(BaseModel):
     task: Optional[str] = None
@@ -38,15 +41,21 @@ class StepResponse(BaseModel):
     info: dict
 
 
+# -------------------- Startup --------------------
+
 @app.on_event("startup")
 async def startup():
     env.reset()
 
 
+# -------------------- Routes --------------------
+
 @app.post("/reset", response_model=FarmObservation)
-async def reset(request: ResetRequest = ResetRequest()):
+async def reset(request: ResetRequest):
     global env
+
     scenario = None
+
     if request.task:
         if request.task not in TASK_SCENARIOS:
             raise HTTPException(
@@ -54,6 +63,7 @@ async def reset(request: ResetRequest = ResetRequest()):
                 detail=f"Unknown task: {request.task}. Available: {list(TASK_SCENARIOS.keys())}",
             )
         scenario = TASK_SCENARIOS[request.task]
+
     env = FarmEnv(scenario=scenario)
     return env.reset()
 
@@ -62,7 +72,12 @@ async def reset(request: ResetRequest = ResetRequest()):
 async def step(action: FarmAction):
     try:
         obs, reward, done, info = env.step(action)
-        return StepResponse(observation=obs, reward=reward, done=done, info=info)
+        return StepResponse(
+            observation=obs,
+            reward=reward,
+            done=done,
+            info=info,
+        )
     except RuntimeError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -104,7 +119,10 @@ async def get_tasks():
 
 @app.get("/health")
 async def health():
-    return {"status": "ok", "environment": "FarmEnv"}
+    return {
+        "status": "ok",
+        "environment": "FarmEnv",
+    }
 
 
 @app.get("/")
@@ -122,19 +140,15 @@ async def root():
 
 
 @app.get("/reset")
-def reset_get():
-    return {"message": "Use POST /reset"}
+async def reset_get():
+    return {"message": "Use POST /reset instead"}
 
 
-def main() -> FastAPI:
-    """Main entry point that returns the FastAPI application."""
+# -------------------- Entry Point (IMPORTANT) --------------------
+
+def main():
+    """
+    Entry point required by deployment platforms.
+    DO NOT run uvicorn here.
+    """
     return app
-
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
-
-
-if __name__ == '__main__':
-    uvicorn.run(app, host='127.0.0.1', port=8000)
