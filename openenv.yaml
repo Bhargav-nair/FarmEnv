@@ -33,5 +33,4 @@ interfaces:
   - step
   - state
 
-# Server entry point - references the main() function in server/app.py
 server: server.app:main
