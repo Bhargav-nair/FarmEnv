@@ -153,3 +153,7 @@ def main():
     DO NOT run uvicorn here.
     """
     return app
+
+
+if __name__ == "__main__":
+    main()
