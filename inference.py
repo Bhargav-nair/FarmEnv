@@ -23,9 +23,12 @@ from openai import OpenAI
 from tasks import run_task_1, run_task_2, run_task_3
 from env import CROP_PROFILES
 
-API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
+API_BASE_URL = os.getenv("API_BASE_URL", "<your-active-endpoint>")
 API_KEY = os.getenv("HF_TOKEN") or os.getenv("API_KEY")
-MODEL_NAME = os.getenv("MODEL_NAME")
+MODEL_NAME = os.getenv("MODEL_NAME", "<your-active-model>")
+
+# Optional — if you use from_docker_image():
+LOCAL_IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME")
 
 _client = None
 
@@ -238,14 +241,22 @@ def smart_agent(observation: dict) -> dict:
 
 
 if __name__ == "__main__":
+    print("START")
     print("=== FarmEnv Hybrid Agent Inference ===")
     print("Architecture: Rule-based priority scoring + LLM refinement")
     print()
+    print("STEP 1: Running Task 1 (Easy) - Water Management")
     score1 = run_task_1(smart_agent)
+    print(f"Task 1 Score: {score1:.4f}")
+    print()
+    print("STEP 2: Running Task 2 (Medium) - Triage + Stress")
     score2 = run_task_2(smart_agent)
+    print(f"Task 2 Score: {score2:.4f}")
+    print()
+    print("STEP 3: Running Task 3 (Hard) - Profit Optimization")
     score3 = run_task_3(smart_agent)
+    print(f"Task 3 Score: {score3:.4f}")
+    print()
     avg = (score1 + score2 + score3) / 3
-    print(f"Task 1 (Easy)   - Water Management:      {score1:.4f}")
-    print(f"Task 2 (Medium) - Triage + Stress:        {score2:.4f}")
-    print(f"Task 3 (Hard)   - Profit Optimization:    {score3:.4f}")
     print(f"Average Score: {avg:.4f}")
+    print("END")
