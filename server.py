@@ -40,16 +40,17 @@ async def startup():
 
 
 @app.post("/reset", response_model=FarmObservation)
-async def reset(request: ResetRequest = ResetRequest()):
+async def reset(request: Optional[ResetRequest] = None):
     global env
     scenario = None
-    if request.task:
-        if request.task not in TASK_SCENARIOS:
+    task = request.task if request else None
+    if task:
+        if task not in TASK_SCENARIOS:
             raise HTTPException(
                 status_code=400,
-                detail=f"Unknown task: {request.task}. Available: {list(TASK_SCENARIOS.keys())}",
+                detail=f"Unknown task: {task}. Available: {list(TASK_SCENARIOS.keys())}",
             )
-        scenario = TASK_SCENARIOS[request.task]
+        scenario = TASK_SCENARIOS[task]
     env = FarmEnv(scenario=scenario)
     return env.reset()
 
