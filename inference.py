@@ -241,22 +241,17 @@ def smart_agent(observation: dict) -> dict:
 
 
 if __name__ == "__main__":
-    print("START")
-    print("=== FarmEnv Hybrid Agent Inference ===")
-    print("Architecture: Rule-based priority scoring + LLM refinement")
-    print()
-    print("STEP 1: Running Task 1 (Easy) - Water Management")
+    print("[START] task=task1", flush=True)
     score1 = run_task_1(smart_agent)
-    print(f"Task 1 Score: {score1:.4f}")
-    print()
-    print("STEP 2: Running Task 2 (Medium) - Triage + Stress")
+    print(f"[STEP] step=1 reward={score1}", flush=True)
+    print(f"[END] task=task1 score={score1} steps=1", flush=True)
+
+    print("[START] task=task2", flush=True)
     score2 = run_task_2(smart_agent)
-    print(f"Task 2 Score: {score2:.4f}")
-    print()
-    print("STEP 3: Running Task 3 (Hard) - Profit Optimization")
+    print(f"[STEP] step=1 reward={score2}", flush=True)
+    print(f"[END] task=task2 score={score2} steps=1", flush=True)
+
+    print("[START] task=task3", flush=True)
     score3 = run_task_3(smart_agent)
-    print(f"Task 3 Score: {score3:.4f}")
-    print()
-    avg = (score1 + score2 + score3) / 3
-    print(f"Average Score: {avg:.4f}")
-    print("END")
+    print(f"[STEP] step=1 reward={score3}", flush=True)
+    print(f"[END] task=task3 score={score3} steps=1", flush=True)
