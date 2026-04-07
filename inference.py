@@ -240,18 +240,27 @@ def smart_agent(observation: dict) -> dict:
         return rule_action
 
 
+def _normalize_score(score: float) -> float:
+    normalized = min(max(score, 0.0001), 0.9999)
+    if normalized == 0.0:
+        normalized = 0.0001
+    elif normalized == 1.0:
+        normalized = 0.9999
+    return round(normalized, 4)
+
+
 if __name__ == "__main__":
     print("[START] task=task1", flush=True)
-    score1 = run_task_1(smart_agent)
+    score1 = _normalize_score(run_task_1(smart_agent))
     print(f"[STEP] step=1 reward={score1}", flush=True)
     print(f"[END] task=task1 score={score1} steps=1", flush=True)
 
     print("[START] task=task2", flush=True)
-    score2 = run_task_2(smart_agent)
+    score2 = _normalize_score(run_task_2(smart_agent))
     print(f"[STEP] step=1 reward={score2}", flush=True)
     print(f"[END] task=task2 score={score2} steps=1", flush=True)
 
     print("[START] task=task3", flush=True)
-    score3 = run_task_3(smart_agent)
+    score3 = _normalize_score(run_task_3(smart_agent))
     print(f"[STEP] step=1 reward={score3}", flush=True)
     print(f"[END] task=task3 score={score3} steps=1", flush=True)
