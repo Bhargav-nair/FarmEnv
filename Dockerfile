@@ -1,10 +1,16 @@
-FROM python:3.11
+FROM python:3.11-slim-bookworm
 
 WORKDIR /app
 
-COPY . .
+ENV PYTHONDONTWRITEBYTECODE=1 \
+	PYTHONUNBUFFERED=1
 
-RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements.txt .
+
+RUN pip install --no-cache-dir --upgrade pip && \
+	pip install --no-cache-dir -r requirements.txt
+
+COPY . .
 
 EXPOSE 7860
 
