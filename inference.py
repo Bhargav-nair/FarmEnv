@@ -24,7 +24,8 @@ from tasks import TASK_SCENARIOS
 from env import CROP_PROFILES, FarmAction, FarmEnv
 
 API_BASE_URL = os.getenv("API_BASE_URL", "<your-active-endpoint>")
-API_KEY = os.getenv("HF_TOKEN") or os.getenv("API_KEY")
+# Prefer API_KEY injected by the validator; fall back to HF_TOKEN for local runs.
+API_KEY = os.getenv("API_KEY") or os.getenv("HF_TOKEN")
 MODEL_NAME = os.getenv("MODEL_NAME", "<your-active-model>")
 
 # Optional — if you use from_docker_image():
@@ -140,7 +141,7 @@ def rule_based_agent(observation: dict) -> dict:
 
 def llm_agent(observation: dict) -> dict:
     """Layer 2: LLM-based agent for refinement."""
-    # If required credentials or endpoints are placeholders/missing, skip LLM calls.
+    # If required credentials are missing, skip LLM calls.
     if not API_KEY or API_BASE_URL.startswith("<") or MODEL_NAME.startswith("<"):
         return dict(DEFAULT_ACTION)
 
