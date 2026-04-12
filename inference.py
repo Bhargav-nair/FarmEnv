@@ -20,8 +20,8 @@ import os
 import re
 import json
 from openai import OpenAI
-from tasks import run_task_1, run_task_2, run_task_3
-from env import CROP_PROFILES
+from tasks import TASK_SCENARIOS
+from env import CROP_PROFILES, FarmAction, FarmEnv
 
 API_BASE_URL = os.getenv("API_BASE_URL", "<your-active-endpoint>")
 API_KEY = os.getenv("HF_TOKEN") or os.getenv("API_KEY")
@@ -29,6 +29,7 @@ MODEL_NAME = os.getenv("MODEL_NAME", "<your-active-model>")
 
 # Optional — if you use from_docker_image():
 LOCAL_IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME")
+BENCHMARK_NAME = "farmenv"
 
 _client = None
 
@@ -139,6 +140,10 @@ def rule_based_agent(observation: dict) -> dict:
 
 def llm_agent(observation: dict) -> dict:
     """Layer 2: LLM-based agent for refinement."""
+    # If required credentials or endpoints are placeholders/missing, skip LLM calls.
+    if not API_KEY or API_BASE_URL.startswith("<") or MODEL_NAME.startswith("<"):
+        return dict(DEFAULT_ACTION)
+
     day = observation.get("day", "?")
     weather = observation.get("weather", "?")
     crops = observation.get("crops", [])
@@ -241,26 +246,73 @@ def smart_agent(observation: dict) -> dict:
 
 
 def _normalize_score(score: float) -> float:
-    normalized = min(max(score, 0.0001), 0.9999)
-    if normalized == 0.0:
-        normalized = 0.0001
-    elif normalized == 1.0:
-        normalized = 0.9999
-    return round(normalized, 4)
+    # Keep score strictly within (0, 1) for validators that reject exact bounds.
+    return round(min(max(score, 0.0001), 0.9999), 4)
+
+
+def _run_logged_task(task_id: str) -> None:
+    scenario = TASK_SCENARIOS[task_id]
+    step_limits = {"task1": 3, "task2": 5, "task3": 7}
+    max_steps = step_limits.get(task_id, 7)
+    env = FarmEnv(scenario=scenario)
+
+    steps_taken = 0
+    done = False
+    rewards = []
+    success = False
+    score = 0.0001
+
+    print(f"[START] task={task_id} env={BENCHMARK_NAME} model={MODEL_NAME}", flush=True)
+
+    try:
+        obs = env.reset()
+
+        for step in range(1, max_steps + 1):
+            action = smart_agent(obs.model_dump())
+            action_str = json.dumps(action, separators=(",", ":"))
+            obs, reward, done, info = env.step(FarmAction(**action))
+
+            reward_value = float(reward.value)
+            rewards.append(reward_value)
+            steps_taken = step
+
+            error = "null"
+            if isinstance(info, dict) and info.get("error") is not None:
+                error = str(info.get("error"))
+
+            print(
+                f"[STEP] step={step} action={action_str} reward={reward_value:.2f} "
+                f"done={str(done).lower()} error={error}",
+                flush=True,
+            )
+
+            if done:
+                break
+
+        total_reward = sum(rewards)
+        reward_min = -1.0 * max(1, max_steps)
+        reward_max = 2.0 * max(1, max_steps)
+        raw_score = (total_reward - reward_min) / max(0.0001, reward_max - reward_min)
+        score = _normalize_score(raw_score)
+        success = done and score > 0.0
+    except Exception:
+        success = False
+        score = 0.0001
+    finally:
+        if hasattr(env, "close"):
+            try:
+                env.close()
+            except Exception:
+                pass
+
+        rewards_str = ",".join(f"{r:.2f}" for r in rewards)
+        print(
+            f"[END] success={str(success).lower()} steps={steps_taken} score={score:.4f} rewards={rewards_str}",
+            flush=True,
+        )
 
 
 if __name__ == "__main__":
-    print("[START] task=task1", flush=True)
-    score1 = _normalize_score(run_task_1(smart_agent))
-    print(f"[STEP] step=1 reward={score1}", flush=True)
-    print(f"[END] task=task1 score={score1} steps=1", flush=True)
-
-    print("[START] task=task2", flush=True)
-    score2 = _normalize_score(run_task_2(smart_agent))
-    print(f"[STEP] step=1 reward={score2}", flush=True)
-    print(f"[END] task=task2 score={score2} steps=1", flush=True)
-
-    print("[START] task=task3", flush=True)
-    score3 = _normalize_score(run_task_3(smart_agent))
-    print(f"[STEP] step=1 reward={score3}", flush=True)
-    print(f"[END] task=task3 score={score3} steps=1", flush=True)
+    _run_logged_task("task1")
+    _run_logged_task("task2")
+    _run_logged_task("task3")
