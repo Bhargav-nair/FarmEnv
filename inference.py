@@ -23,10 +23,10 @@ from openai import OpenAI
 from tasks import TASK_SCENARIOS
 from env import CROP_PROFILES, FarmAction, FarmEnv
 
-API_BASE_URL = os.getenv("API_BASE_URL", "<your-active-endpoint>")
+API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
 # Prefer API_KEY injected by the validator; fall back to HF_TOKEN for local runs.
 API_KEY = os.getenv("API_KEY") or os.getenv("HF_TOKEN")
-MODEL_NAME = os.getenv("MODEL_NAME", "<your-active-model>")
+MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
 
 # Optional — if you use from_docker_image():
 LOCAL_IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME")
@@ -38,7 +38,7 @@ _client = None
 def _get_client():
     global _client
     if _client is None:
-        _client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY or "placeholder")
+        _client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
     return _client
 
 
@@ -141,8 +141,8 @@ def rule_based_agent(observation: dict) -> dict:
 
 def llm_agent(observation: dict) -> dict:
     """Layer 2: LLM-based agent for refinement."""
-    # If required credentials are missing, skip LLM calls.
-    if not API_KEY or API_BASE_URL.startswith("<") or MODEL_NAME.startswith("<"):
+    # If credentials are missing, skip LLM calls for local/offline runs.
+    if not API_KEY:
         return dict(DEFAULT_ACTION)
 
     day = observation.get("day", "?")
